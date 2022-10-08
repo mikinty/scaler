@@ -1,0 +1,186 @@
+\documentclass{article}
+
+\input{preamble}
+
+\begin{document}
+\maketitle
+
+\section{Why do we care about search?}
+
+When we think of ``search,'' some examples that might pop into your head are 
+\begin{itemize}
+    \item Google search
+    \item Phone directory
+    \item Yelp restaurants
+\end{itemize}
+
+We associate search with \textbf{finding things}, and that's pretty much what it is.
+
+In terms of some things we care about search: 
+\begin{itemize}
+    \item We usually want to have \textbf{accurate results}. Meaning if I want to know if something exists in a database, then I should be able to get a yes or no answer (and not something like ``idk'').
+    \item We want to have the result \textbf{fast}. It's annoying to wait a long time for someone to find something, and it's the same for search engines or other services that are supposed to help you find things.
+\end{itemize}
+
+\section{Search, formally}
+
+To help formalize this notion, we can actually break down search as the following.
+
+\begin{definition}
+    A \textbf{search} can be defined as consisting of 
+    \begin{itemize}
+        \item \textbf{Target}: What are we looking for? E.g. are we looking for a website, a video, a person?
+        \item \textbf{Search space}: What is the set of things we are considering? Is it a database, is it the numbers 0 to 9, is it anything?
+    \end{itemize}
+    And the problem of searching is, given a \textbf{target} and a \textbf{search space}, we 
+    \begin{itemize}
+        \item Return \te{true} if $\textbf{target} \in \textbf{search space}$
+        \item Return \te{false} otherwise
+    \end{itemize}
+\end{definition}
+
+To get an idea of what search problems are like, let's consider the problem of looking for a word in a dictionary.
+
+\begin{example}
+    Suppose we have a dictionary, and we want to find the word ``elephant''. How do we go about doing this?
+    \begin{itemize}
+        \item What if we had a newspaper instead, how would we find words there?
+    \end{itemize}
+\end{example}
+
+\begin{example}
+   Suppose we have a sorted array of integers. We want to find some target number $t$. How do we go about doing this?
+   
+   \begin{itemize}
+    \item Suppose our array looks like 
+        \begin{equation*}
+            \te{
+                [-6, 1, 4, 5, 6, 8, 11, 19, 21]
+            }
+        \end{equation*}
+    \item Find 4
+    \item Find 11
+    \item Find 7
+   \end{itemize}
+\end{example}
+
+When we are dealing with a sorted array, we notice that if we are currently at some element $e$, if our target $t$ is 
+\begin{itemize}
+    \item $t < e$, then we know every number above $e$ does not need to be considered anymore, because any $e' > e > t$
+    \item $t > e$, similarly, if this is the case, then we can discard all elements $e' \leq e$
+\end{itemize}
+
+With this in mind, we can now motivate the idea of \textbf{binary search}.
+
+\section{Binary Search}
+
+The intuition goes like this 
+\begin{enumerate}
+    \item What is a good starting point, so we can discard the most elements?
+    \item After we eliminate some elements, what is the next best starting point?
+    \item When do we stop?
+\end{enumerate}
+
+A natural question that might pop up is, why do we choose the halfway point? Does it really matter what we choose?
+Another question that might pop up is, can we trisect, quadsect, instead of just bisecting?
+
+To quell these concerns, we can actually rigorously investigate these ideas with math.
+
+\begin{problem}
+    What happens if we don't choose the halfway point?
+
+    Suppose we define $f(n)$ to be the expected number of searches with $n$ elements. 
+    We are basically asking ourselves, what is the optimal definition of 
+    \begin{align*}
+        f(n) &= 1 + P(\text{$t$ in first part}) \cdot f(\text{first part}) +  
+            P(\text{$t$ in second part}) \cdot f(\text{second part})\\
+             &= 1 + a \cdot f(an) + (1-a)f((1-a)n), a \in [0, 1]
+    \end{align*}
+    To get an idea of how this definition works, suppose we chose $a = \frac{1}{2}$, as we do in binary search.
+    \begin{align*}
+        f(n) &= 1 + 
+        \frac{1}{2}f\pa{\frac{n}{2}} + 
+        \frac{1}{2}f\pa{\frac{n}{2}}\\
+        &= 1 + f\pa{\frac{n}{2}}
+    \end{align*}
+    If we define $f(k) = 1$ for $k \leq 1$, then we see it takes $\log_2(n)$ steps to get to 1, so this reduces to approximately $f(n) = 1 + \log_2(n)$.
+
+    So how about other values of $a$?
+\end{problem}
+
+\subsection{Binary search algorithm}
+
+Before we answer the second question about doing more than bisection, e.g. trisecting, let's look at the algorithm for binary search.
+
+\begin{lstlisting}[language=Python, caption={Python implementation for binary search},label={code:binary}]
+    def binarySearch(array, start, end, target):
+        if start > end:
+            return -1
+
+        mid = (start + end) / 2
+
+        if array[mid] == target:
+            return mid 
+        elif array[mid] > target:
+            return binarySearch(array, start, mid - 1, target)
+        else: # array[mid] < target:
+            return binarySearch(array, mid + 1, end, target)
+\end{lstlisting}
+
+\begin{example}
+    Using the binary search algorithm in \ref{code:binary}, perform binary search for 4, 11, 7 in 
+    \begin{equation*}
+        \te{
+            [-6, 1, 4, 5, 6, 8, 11, 19, 21]
+        }
+    \end{equation*}
+
+    For each one, you can organize your work by filling out the following table
+    \begin{figure}[h]
+        \centering
+        \begin{tabular}{| c | c | c | c |}
+           \hline
+           \te{start} & \te{end} & \te{mid} & \te{array[mid]} \\\hline
+           & & & \\\hline
+           & & & \\\hline
+           & & & \\\hline
+           & & & \\\hline
+        \end{tabular}
+    \end{figure}
+\end{example}
+
+\begin{problem}
+    So now with our algorithm, why don't we do a trisect search?
+
+    If we investigate our binary search algorithm, we compare at most 2 times each iteration, and when we hit mid, we stop.
+
+    For ternary search, what would our algorithm look like? Even with $\log_3(n)$ depth of the function calls, how many times do we compare at each level?
+    Is this better or worse than binary search?
+\end{problem}
+
+\section{Binary search problems}
+
+\begin{example}
+    Given an array of integers $A$ that are sorted ascending, and given a target $t$, find the closest integer $k \in A$ such that $\abs{t - k}$ is minimal.
+
+    We can solve this naively with a linear search, and keeping track of the minimum.
+    But our array is sorted, can we do better?
+\end{example}
+
+\begin{example}
+    Given an array of integers $A$ that are sorted ascending, and given a target $t$, find the number of times $t$ occurs in $A$.
+
+    We can solve this naively with a linear search, and keeping track of the frequency of $t$.
+    But our array is sorted, can we do better?
+\end{example}
+
+\section{Problems}
+
+\begin{enumerate}
+    \item \textit{Challenge.} It can be proven that with a comparison-based algorithm, the optimal search algorithm takes $O(\log n)$ steps. Can you prove this?
+    \begin{itemize}
+        \item If we don't use a comparison-based algorithm, what can we do? What results do we get for the efficiency of search?
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
